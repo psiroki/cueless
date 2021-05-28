@@ -1,0 +1,72 @@
+body {
+  font-family: sans-serif;
+  font-size: 12pt;
+  margin: 8px;
+  background-color: #ccc;
+  color: #111;
+  padding-bottom: min(30vh, 64px);
+  box-sizing: border-box;
+}
+
+.dropShade {
+  display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(rgba(0,255,160,0.85), #0000);
+  color: white;
+  text-shadow: 0px 1px 5px black, 0px 1px 5px black, 0px 2px 3px black;
+  font-size: 3vmin;
+  box-shadow: inset 0 0 5vmax rgba(0,255,160,1);
+  z-index: 100;
+  pointer-events: none;
+  text-align: center;
+}
+.dropShade::before { content: 'You can drop the file here'; }
+.dropShade.faded::before { opacity: 0.25; }
+.dragOver .dropShade { display: flex; }
+
+.dropBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 256px;
+  height: 256px;
+  box-shadow: inset 0px 3px 7px #0008;
+  border: 2px solid #585858;
+  border-radius: 5px;
+  box-sizing: border-box;
+  padding: 8px;
+  color: #111;
+  text-align: center;
+}
+
+.dropBox:focus {
+  box-shadow: inset 0 0 2px 3px #cf5;
+  border-color: #9b4;
+}
+
+.dropBox > input[type=file] {
+  display: none;
+}
+
+#console {
+  margin: 0;
+  padding: 8px;
+  box-sizing: border-box;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: min(30vh, 256px);
+  background: linear-gradient(to bottom, black 80%, #222);
+  color: #ccc;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 10pt;
+  line-height: 140%;
+}
+
+#console > * {
+  margin-top: 4px;
+}
