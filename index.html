@@ -17,11 +17,26 @@
 <meta property="og:image:type" content="image/jpeg"/ -->
 </head>
 <body>
-  <div class="dropBox" tabindex="0">
-    <span>Drop box</span>
-    <div class="dropShade"></div>
-    <input type="file" multiple="multiple" accept="audio/mp3"/>
+  <div class="main">
+    <div class="dropBox" tabindex="0">
+      <span>Drop box</span>
+      <div class="dropShade"></div>
+      <input type="file" multiple="multiple" accept="audio/mp3"/>
+    </div>
   </div>
+  <div class="file template"><div class="filename"></div><div class="fileContents">
+    <div class="songProperties">
+      <span>Title:</span><span class="songTitle"></span>
+      <span>Artist:</span><span class="songArtist"></span>
+      <span>Album:</span><span class="songAlbum"></span>
+    </div>
+    <div class="cueView">
+      <div class="cueTitle"></div>
+      <div class="cueTimeline">
+        <div class="cuePoint"><div class="cuePin" style="left: 100%"></div><div class="cueDescription">3:14 Foobar</div></div>
+      </div>
+    </div>
+  </div></div>
   <pre id="console"></pre>
 <script defer="defer" src="js/drop.js"></script>
 <script defer="defer" src="js/mp3tag.js"></script>

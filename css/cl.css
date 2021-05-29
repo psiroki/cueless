@@ -8,8 +8,21 @@ body {
   margin: 8px;
   background-color: #ccc;
   color: #111;
-  padding-bottom: var(--console-height);
+}
+
+.main {
   box-sizing: border-box;
+  position: fixed;
+  padding: 8px;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: var(--console-height);
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  overflow-y: auto;
+  align-content: flex-start;
 }
 
 .dropShade {
@@ -34,7 +47,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 256px;
+  width: 100%;
   height: 256px;
   box-shadow: inset 0px 3px 7px #0008;
   border: 2px solid #585858;
@@ -69,6 +82,7 @@ body {
   white-space: pre-wrap;
   font-size: 10pt;
   line-height: 140%;
+  z-index: 100;
 }
 
 #console > * {
@@ -77,4 +91,120 @@ body {
 
 .template {
   display: none !important;
+}
+
+.file {
+  display: flex;
+  padding: 3px 2px 2px;
+  border: 1px solid #aaa;
+  background: #777;
+  box-shadow: 0 3px 3px #0002;
+  flex-direction: column;
+  height: 300px;
+  width: 33.3333333%;
+  border-radius: 2px;
+  color: #eee;
+  box-sizing: border-box;
+}
+
+.file .filename {
+  text-align: center;
+  background: linear-gradient(-3deg, #fff1, #fff2, #fff0) #cf5;
+  border: 1px solid #888;
+  padding: 2px;
+  margin-bottom: 4px;
+  color: #111;
+  box-shadow: 0 1px 3px -1px #0008;
+  border-radius: 2px;
+}
+
+.file .fileContents {
+  flex-grow: 1;
+  overflow-y: auto;
+  font-size: 10pt;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.file .songProperties {
+  margin: 4px;
+  display: grid;
+  grid-template-columns: 1fr 3fr;
+}
+
+.file audio {
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.cueView {
+  height: 14px;
+  border-radius: 4px 4px;
+  padding: 72px 4px 4px;
+  position: relative;
+  background: #444;
+}
+
+.cueView .cueTitle {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  right: 2px;
+  border-radius: 2px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  background: #fff8;
+  color: #111;
+}
+
+.cueTimeline {
+  position: relative;
+  height: 12px;
+  border: 4px;
+  background: #cf5 linear-gradient(to bottom, #0000, #0004);
+  border-radius: 3px;
+}
+
+.cueTimeline .cuePoint {
+  position: absolute;
+  width: calc(100% - 8px);
+  height: 0;
+  top: 0;
+}
+
+.cueTimeline .cuePoint .cuePin {
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  background: #f70 linear-gradient(to bottom, #0000, #0008);
+}
+
+.cuePoint:hover .cueDescription {
+  display: flex;
+}
+
+.cueDescription {
+  display: none;
+  position: absolute;
+  top: -48px;
+  height: 40px;
+  width: calc(100% + 8px);
+  background: #f70 linear-gradient(-3deg, #fff1, #fff4, #fff0);
+  align-items: center;
+  box-sizing: border-box;
+  padding: 4px;
+  border-radius: 4px;
+  color: #111;
+  /* text-shadow: 0px 1px 1px #0008; */
+}
+
+.cuePoint:hover .cueDescription::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  height: 8px;
+  left: 0;
+  right: 0;
 }
