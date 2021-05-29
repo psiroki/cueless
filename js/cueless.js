@@ -205,3 +205,6 @@ dropHandler(dropBox, blob => processBlob(blob));
 dropBox.addEventListener("click", _ => {
   dropBox.querySelector("input[type=file]")?.click();
 });
+dropBox.querySelector("input[type=file]")?.addEventListener("change", e => {
+  Array.from(e.currentTarget.files).forEach(blob => processBlob(blob));
+});
