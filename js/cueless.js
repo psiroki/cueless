@@ -70,8 +70,7 @@ function print(...args) {
   entry.scrollIntoView();
 }
 
-
-dropHandler(document.querySelector(".dropBox"), blob => {
+function processBlob(blob) {
   print("Reading", blob.name, "of type", blob.type);
   let fr = new FileReader();
   fr.onload = () => {
@@ -87,5 +86,14 @@ dropHandler(document.querySelector(".dropBox"), blob => {
       console.log(JSON.parse(cueJson));
     }
   };
+  fr.onerror = e => {
+    print("Error loading", blob.name);
+  };
   fr.readAsArrayBuffer(blob);
+}
+
+const dropBox = document.querySelector(".dropBox");
+dropHandler(dropBox, blob => processBlob(blob));
+dropBox.addEventListener("click", _ => {
+  dropBox.querySelector("input[type=file]")?.click();
 });
