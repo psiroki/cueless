@@ -96,12 +96,11 @@ body {
 
 .file {
   display: flex;
-  padding: 3px 2px 2px;
+  padding: 3px 2px;
   border: 1px solid #aaa;
   background: #777;
   box-shadow: 0 3px 3px #0002;
   flex-direction: column;
-  height: 300px;
   width: max(33.3333333%, 400px);
   border-radius: 2px;
   color: #eee;
@@ -120,12 +119,8 @@ body {
 }
 
 .file .fileContents {
-  flex-grow: 1;
   overflow-y: auto;
   font-size: 10pt;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
 }
 
 .file .songProperties {
@@ -140,11 +135,17 @@ body {
 }
 
 .cueView {
-  height: 14px;
+  margin-top: 5px;
   border-radius: 4px 4px;
   padding: 72px 4px 4px;
   position: relative;
   background: #444;
+}
+
+.cueView select {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 5px;
 }
 
 .cueView .cueTitle {

@@ -20,9 +20,76 @@ function base64Decode(s) {
   return result;
 }
 
-function decodeBase64EncodedBytes(bytes) {
+function decodeBase64EncodedBuffer(bytes) {
   const s = utf8.decode(new Uint8Array(bytes).buffer);
-  return utf8.decode(base64Decode(s).buffer);
+  return base64Decode(s).buffer;
+}
+
+function decodeBase64EncodedString(bytes) {
+  return utf8.decode(decodeBase64EncodedBuffer(bytes));
+}
+
+const two32 = Math.pow(2, 32);
+
+class BufferReader {
+  constructor(buffer) {
+    this.view = new DataView(buffer);
+    this.pos = 0;
+  }
+
+  eob() {
+    return this.pos >= this.view.byteLength;
+  }
+
+  readByte() {
+    return this.view.getUint8(this.pos++);
+  }
+
+  readInt32() {
+    const p = this.pos;
+    this.pos += 4;
+    return this.view.getUint32(p, true);
+  }
+
+  readInt64() {
+    const p = this.pos;
+    this.pos += 8;
+    // 64 bit integers are used only for file offsets
+    // this is not going to work well if the file is larger
+    // than not going to work well for file size is greater or
+    // equal to 4503599627370496 bytes (4096 TiB)
+    return this.view.getUint32(p, true) + this.view.getUint32(p + 4, true) * two32;
+  }
+
+  readDouble() {
+    const p = this.pos;
+    this.pos += 8;
+    return this.view.getFloat64(p, true);
+  }
+
+  readFloat() {
+    const p = this.pos;
+    this.pos += 4;
+    return this.view.getFloat32(p, true);
+  }
+
+  readShort() {
+    const p = this.pos;
+    this.pos += 2;
+    return this.view.getUint16(p, true);
+  }
+
+  readShorts(count) {
+    const p = this.pos;
+    if (p & 1) {
+      const result = new Uint16Array(count);
+      for (let i = 0; i < count; ++i)
+        result[i] = this.readShort();
+      return result;
+    }
+    this.pos += count * 2;
+    return new Uint16Array(this.view.buffer, this.view.byteOffset + p, count);
+  }
 }
 
 function looseJson(obj) {
@@ -138,6 +205,13 @@ function generateCues(title, duration, cues, view, player) {
   view.querySelector(".cueTitle").textContent = title;
   const tl = view.querySelector(".cueTimeline");
   tl.textContent = "";
+  const cl = view.querySelector(".cueList");
+  const seek = t => {
+    player.currentTime = t;
+    if (player.paused) {
+      player.play();
+    }
+  };
   cues.forEach(cue => {
     const point = divWithClass("cuePoint");
     const pin = divWithClass("cuePin");
@@ -145,22 +219,31 @@ function generateCues(title, duration, cues, view, player) {
 
     pin.style.left = (cue.time / duration * 100)+"%";
 
-
-    desc.textContent = formatTime(cue.time)+" "+cue.name;
-    if (!cue.name)
-      desc.appendChild(tagWithContent("i", "\u00a0<no name>"))
+    const option = document.createElement("option");
+    cl.appendChild(option);
+    for (let item of [desc, option]) {
+      item.textContent = formatTime(cue.time)+" "+cue.name;
+      if (!cue.name)
+        item.appendChild(tagWithContent("i", "\u00a0<no name>"))
+      if (typeof cue.index !== "undefined") {
+        item.appendChild(document.createTextNode(" ("+cue.index+")"));
+      }
+      option.setAttribute("value", cue.time);
+    }
 
     point.appendChild(pin);
     point.appendChild(desc);
     tl.appendChild(point);
     if (player) {
       point.addEventListener("click", () => {
-        player.currentTime = cue.time;
-        if (player.paused) {
-          player.play();
-        }
+        seek(cue.time);
       });
     }
+  });
+  cl.addEventListener("input", _ => {
+    const time = +cl.value;
+    if (!isNaN(time))
+      seek(time);
   });
 }
 
@@ -177,26 +260,55 @@ async function processBlob(blob) {
   console.log(tags);
   let embedded = Object.fromEntries(tags.v2.GEOB.map(e => [e.description, e]));
   print("GEOBs:", Object.keys(embedded));
-  let cuePoints = embedded["CuePoints"];
-  if (cuePoints) {
-    const cueJson = decodeBase64EncodedBytes(cuePoints.object);
-    print("Found (Serato?) cue points:", cueJson);
-    cuePoints = JSON.parse(cueJson);
-    console.log(cuePoints);
-  }
   const view = fileTemplate.cloneNode(true);
   view.querySelector(".filename").textContent = blob.name;
   const contents = view.querySelector(".fileContents");
+  const cueViewTemplate = view.querySelector(".cueView");
+  const cueViewParent = cueViewTemplate.parentNode;
+  cueViewTemplate.remove();
+
+  contents.appendChild(player);
+
+  let cuePoints = embedded["CuePoints"];
   if (cuePoints) {
+    const cueJson = decodeBase64EncodedString(cuePoints.object);
+    print("Found (Serato?) cue points:", cueJson);
+    cuePoints = JSON.parse(cueJson);
     const cues = cuePoints.cues.map(e => ({time: e.time * 1e-3, name: e.name }));
     const title = ["CuePoints"];
     if (cuePoints.source)
       title.push("("+cuePoints.source+")");
-    generateCues(title.join(" "), audioInfo.duration, cues, view.querySelector(".cueView"), player);
+    const cueView = cueViewTemplate.cloneNode(true);
+    cueViewParent.appendChild(cueView);
+    generateCues(title.join(" "), audioInfo.duration, cues, cueView, player);
   }
+
+  let cueData = embedded["DJUCED_CUE_DATA"];
+  if (cueData) {
+    const reader = new BufferReader(decodeBase64EncodedBuffer(cueData.object));
+    const version = reader.readByte();
+    const cues = [];
+    while (!reader.eob()) {
+      const cue = {};
+      cue.index = reader.readInt32();
+      cue.time = reader.readDouble();
+      cue.byteOffset = reader.readInt64();
+      if (version >= 2)
+        cue.loop = reader.readFloat();
+      if (version >= 3)
+        cue.color = reader.readInt32();
+      const nameLength = reader.readShort();
+      const nameCodes = reader.readShorts(nameLength);
+      cue.name = String.fromCharCode(nameCodes).replace(/\u0000$/, "");
+      cues.push(cue);
+    }
+    const cueView = cueViewTemplate.cloneNode(true);
+    cueViewParent.appendChild(cueView);
+    generateCues("DJUCED_CUE_DATA", audioInfo.duration, cues, cueView, player);
+  }
+
   for (let field of ["Title", "Artist", "Album"])
     contents.querySelector(".song"+field).textContent = tags[field.toLowerCase()];
-  contents.appendChild(player);
   fileContainer.appendChild(view);
 }
 
