@@ -90,6 +90,10 @@ body {
   margin-top: 4px;
 }
 
+.clickToSelect {
+  cursor: pointer;
+}
+
 .template {
   display: none !important;
 }

@@ -130,13 +130,32 @@ function looseJson(obj) {
 }
 
 function print(...args) {
-  const node = document.createTextNode(args.map(e => {
-    if (typeof e === "object")
-      return looseJson(e);
-    return e;
-  }).join(" "));
+  const contents = document.createDocumentFragment();
+  let parts = [];
+  for (let arg of args) {
+    if (typeof arg === "object") {
+      parts.push("");
+      contents.appendChild(document.createTextNode(parts.join(" ")));
+      parts = [""];
+      const span = document.createElement("span");
+      span.className = "clickToSelect";
+      span.addEventListener("click", e => {
+        const r = document.createRange();
+        r.selectNode(e.currentTarget);
+        const s = window.getSelection();
+        s.removeAllRanges();
+        s.addRange(r);
+      });
+      span.textContent = looseJson(arg);
+      contents.appendChild(span);
+    } else {
+      parts.push(arg);
+    }
+  }
+  if (parts.length > 1 || parts.length === 1 && parts[0] !== "")
+    contents.appendChild(document.createTextNode(parts.join(" ")));
   const entry = document.createElement("div");
-  entry.appendChild(node);
+  entry.appendChild(contents);
   domConsole.appendChild(entry);
   entry.scrollIntoView();
 }
@@ -272,8 +291,8 @@ async function processBlob(blob) {
   let cuePoints = embedded["CuePoints"];
   if (cuePoints) {
     const cueJson = decodeBase64EncodedString(cuePoints.object);
-    print("Found (Serato?) cue points:", cueJson);
     cuePoints = JSON.parse(cueJson);
+    print("Found (Serato?) cue points:", cuePoints);
     const cues = cuePoints.cues.map(e => ({time: e.time * 1e-3, name: e.name }));
     const title = ["CuePoints"];
     if (cuePoints.source)
@@ -305,6 +324,7 @@ async function processBlob(blob) {
     const cueView = cueViewTemplate.cloneNode(true);
     cueViewParent.appendChild(cueView);
     generateCues("DJUCED_CUE_DATA", audioInfo.duration, cues, cueView, player);
+    print("Found and decoded DJUCED cue points:", cues);
   }
 
   for (let field of ["Title", "Artist", "Album"])
