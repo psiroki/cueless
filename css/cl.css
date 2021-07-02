@@ -218,3 +218,53 @@ body {
   left: 0;
   right: 0;
 }
+
+.savePanel {
+  padding: 4px;
+  text-align: center;
+}
+
+.saveButton {
+  text-decoration: none;
+  color: #eee;
+  display: inline-block;
+  padding: 2px 8px;
+  vertical-align: middle;
+  box-sizing: border-box;
+  height: 24px;
+  border-radius: 12px;
+  line-height: 20px;
+  background-color: #1118;
+}
+
+.saveIcon {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  position: relative;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+
+.saveIcon::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  background-color: #eee;
+}
+
+.saveIcon::after {
+  content: '';
+  border: 6px solid transparent;
+  border-bottom: 0 none;
+  border-top-color: #eee;
+  width: 0;
+  height: 0;
+  position: absolute;
+  top: 6px;
+  left: 0px;
+}
