@@ -378,6 +378,8 @@ function tagWithContent(tag, s) {
 }
 
 function formatTime(timeInSecs) {
+  const neg = timeInSecs < 0;
+  if (neg) timeInSecs = -timeInSecs;
   let secs = timeInSecs % 60;
   let minutes = (timeInSecs - secs) / 60 | 0;
   let hours = minutes / 60 | 0;
@@ -388,7 +390,10 @@ function formatTime(timeInSecs) {
     parts.push(minutes);
   }
   parts.push(secs.toFixed(3).padStart(6, "0"));
-  return parts.map((e, i) => i > 0 && typeof e === "number" ? e.toString().padStart(2, "0") : e)
+  return (neg ? "-" : "")+
+    parts.map((e, i) => i > 0 && typeof e === "number"
+      ? e.toString().padStart(2, "0")
+      : e)
     .join(":");
 }
 
@@ -522,7 +527,10 @@ function processMp3(buffer) {
         parsed = parseMp3Header(header);
         if (parsed?.layer === "Layer3" && parsed.frameLength > 4) {
           byteOffsets.push({
-            time, offset: pos, header: parsed
+            time,
+            offset: pos,
+            header: parsed,
+            index: byteOffsets.length
           });
           reader.relativeSeek(parsed.frameLength-4);
           // console.log("Found frame at "+pos+": "+header.map(e => e.toString(2).padStart(8, "0"))+
@@ -542,7 +550,14 @@ function processMp3(buffer) {
   }
   console.log("Time is "+formatTime(time)+
     "\nSize is "+reader.pos / 1024 +"k");
-  return { byteOffsets };
+  return {
+    byteOffsets,
+    lookupFrameByTime(time) {
+      let offsetIndex = customBinarySearch(this.byteOffsets, desc => time - desc.time);
+      if (offsetIndex < 0) offsetIndex = -offsetIndex - 2;
+      return byteOffsets[Math.min(this.byteOffsets.length - 1, Math.max(0, offsetIndex))];
+    }
+  };
 }
 
 async function processBlob(blob) {
@@ -593,9 +608,7 @@ async function processBlob(blob) {
     let index = 0;
     for (let cp of cuePoints.cues) {
       const time = cp.time * 1e-3;
-      let offsetIndex = customBinarySearch(byteOffsets, desc => time - desc.time);
-      if (offsetIndex < 0) offsetIndex = -offsetIndex - 2;
-      const frame = byteOffsets[offsetIndex];
+      const frame = frameInfo.lookupFrameByTime(time);
       let nameLength = cp.name.length + 1;
       cueBuffer
         .writeInt32(++index)
@@ -626,11 +639,9 @@ async function processBlob(blob) {
       cue.index = reader.readInt32();
       cue.time = reader.readDouble();
       cue.byteOffset = reader.readInt64();
-      let offsetIndex = customBinarySearch(byteOffsets, desc => cue.time - desc.time);
-      if (offsetIndex < 0) offsetIndex = -offsetIndex - 2;
-      const frame = byteOffsets[offsetIndex];
+      const frame = frameInfo.lookupFrameByTime(cue.time);
       console.log("Byte offset error is "+(frame?.offset - cue.byteOffset)*1e-3+
-        "k ("+cue.byteOffset+" vs "+frame.offset+", frame index is "+offsetIndex+")\n"+
+        "k ("+cue.byteOffset+" vs "+frame?.offset+", frame index is "+frame?.index+")\n"+
         "time error is "+(frame?.time - cue.time)+" ("+formatTime(cue.time)+")");
       if (version >= 2)
         cue.loop = reader.readFloat();
